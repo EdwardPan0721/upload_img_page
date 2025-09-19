@@ -6,14 +6,8 @@
   <style>
     body { font-family: sans-serif; text-align: center; padding: 20px; }
     .file-status { margin: 10px 0; }
-    .progress-bar {
-      width: 80%; height: 20px; background-color: #eee; margin: 5px auto;
-      border-radius: 5px; overflow: hidden;
-    }
-    .progress-fill {
-      height: 100%; width: 0%; background-color: #4caf50; text-align: center;
-      color: white; line-height: 20px; font-size: 12px;
-    }
+    .progress-bar { width: 80%; height: 20px; background-color: #eee; margin: 5px auto; border-radius: 5px; overflow: hidden; }
+    .progress-fill { height: 100%; width: 0%; background-color: #4caf50; text-align: center; color: white; line-height: 20px; font-size: 12px; }
   </style>
 </head>
 <body>
@@ -32,9 +26,7 @@
 
       if (!files.length) return alert('請選擇檔案');
 
-      // 依序上傳每個檔案，避免同時大量請求
       for (const file of files) {
-        // 建立狀態區塊
         const fileDiv = document.createElement('div');
         fileDiv.className = 'file-status';
         fileDiv.innerHTML = `<strong>${file.name}</strong>`;
@@ -46,7 +38,6 @@
         fileDiv.appendChild(progressBar);
         container.appendChild(fileDiv);
 
-        // 讀檔案成 Base64
         await new Promise((resolve) => {
           const reader = new FileReader();
           reader.onload = function(e) {
@@ -54,7 +45,7 @@
             const payload = `fileBlob=${encodeURIComponent(base64Data)}&fileName=${encodeURIComponent(file.name)}&mimeType=${encodeURIComponent(file.type)}`;
 
             const xhr = new XMLHttpRequest();
-            xhr.open('POST', 'https://script.google.com/macros/s/AKfycbzsT_S30OruxwlGEtirjbvsiZHYnQlxLJfgDwIQHPPwP29SyjxgXyWiy7QUFpYRZAbcRw/exec');
+            xhr.open('POST', '/exec');  // 同源
             xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
 
             xhr.upload.onprogress = function(event) {
@@ -73,7 +64,7 @@
                 progressFill.style.backgroundColor = '#f44336';
                 progressFill.textContent = '❌ 上傳失敗';
               }
-              resolve(); // 完成一個檔案後再上傳下一個
+              resolve();
             };
 
             xhr.onerror = function() {
