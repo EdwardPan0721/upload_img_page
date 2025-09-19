@@ -2,46 +2,96 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>圖片上傳</title>
+  <title>多檔圖片上傳</title>
+  <style>
+    body { font-family: sans-serif; text-align: center; padding: 20px; }
+    .file-status { margin: 5px 0; }
+    .progress-bar {
+      width: 80%; height: 20px; background-color: #eee; margin: 2px auto;
+      border-radius: 5px; overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%; width: 0%; background-color: #4caf50; text-align: center;
+      color: white; line-height: 20px; font-size: 12px;
+    }
+  </style>
 </head>
-<body style="font-family: sans-serif; text-align: center;">
-  <h2>上傳圖片</h2>
+<body>
+  <h2>📸 多檔圖片上傳</h2>
   <input type="file" id="fileInput" accept="image/*" multiple>
   <button onclick="uploadFiles()">上傳</button>
-  <p id="status"></p>
+  
+  <div id="statusContainer"></div>
 
   <script>
-    async function uploadFile() {
+    async function uploadFiles() {
       const fileInput = document.getElementById('fileInput');
-      if (!fileInput.files.length) return alert('請選擇檔案');
+      const files = Array.from(fileInput.files);
+      const container = document.getElementById('statusContainer');
+      container.innerHTML = ''; // 清空前一次狀態
 
-      const file = fileInput.files[0];
-      const reader = new FileReader();
+      if (!files.length) return alert('請選擇檔案');
 
-      reader.onload = async function(e) {
-        const base64Data = e.target.result.split(',')[1]; // 取 base64
-        const formData = new FormData();
-        formData.append('fileBlob', base64Data);
-        formData.append('fileName', file.name);
-        formData.append('mimeType', file.type);
+      for (const file of files) {
+        // 建立狀態區塊
+        const fileDiv = document.createElement('div');
+        fileDiv.className = 'file-status';
+        fileDiv.innerHTML = `<strong>${file.name}</strong>`;
+        const progressBar = document.createElement('div');
+        progressBar.className = 'progress-bar';
+        const progressFill = document.createElement('div');
+        progressFill.className = 'progress-fill';
+        progressBar.appendChild(progressFill);
+        fileDiv.appendChild(progressBar);
+        container.appendChild(fileDiv);
 
-        try {
-          const response = await fetch('https://script.google.com/macros/s/AKfycbzsT_S30OruxwlGEtirjbvsiZHYnQlxLJfgDwIQHPPwP29SyjxgXyWiy7QUFpYRZAbcRw/exec', {
-            method: 'POST',
-            body: formData
-          });
-          const text = await response.text();
-          document.getElementById('status').innerText = text;
-        } catch(err) {
-          document.getElementById('status').innerText = '上傳失敗: ' + err;
-        }
-      };
+        // 讀檔
+        const reader = new FileReader();
+        reader.onload = async function(e) {
+          const base64Data = e.target.result.split(',')[1];
+          const formData = new FormData();
+          formData.append('fileBlob', base64Data);
+          formData.append('fileName', file.name);
+          formData.append('mimeType', file.type);
 
-      reader.readAsDataURL(file);
+          try {
+            // 使用 XMLHttpRequest 來監控進度
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '你的 Web App URL'); // 替換成你的 Apps Script URL
+
+            xhr.upload.onprogress = function(event) {
+              if (event.lengthComputable) {
+                const percent = Math.round((event.loaded / event.total) * 100);
+                progressFill.style.width = percent + '%';
+                progressFill.textContent = percent + '%';
+              }
+            };
+
+            xhr.onload = function() {
+              if (xhr.status === 200) {
+                progressFill.style.backgroundColor = '#4caf50';
+                progressFill.textContent = '✅ 上傳成功';
+              } else {
+                progressFill.style.backgroundColor = '#f44336';
+                progressFill.textContent = '❌ 上傳失敗';
+              }
+            };
+
+            xhr.onerror = function() {
+              progressFill.style.backgroundColor = '#f44336';
+              progressFill.textContent = '❌ 上傳失敗';
+            };
+
+            xhr.send(formData);
+          } catch(err) {
+            progressFill.style.backgroundColor = '#f44336';
+            progressFill.textContent = '❌ 上傳錯誤';
+          }
+        };
+
+        reader.readAsDataURL(file);
+      }
     }
   </script>
 </body>
 </html>
-
-
-
