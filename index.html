@@ -28,7 +28,7 @@
       const fileInput = document.getElementById('fileInput');
       const files = Array.from(fileInput.files);
       const container = document.getElementById('statusContainer');
-      container.innerHTML = ''; // 清空前一次狀態
+      container.innerHTML = '';
 
       if (!files.length) return alert('請選擇檔案');
 
@@ -45,55 +45,27 @@
         fileDiv.appendChild(progressBar);
         container.appendChild(fileDiv);
 
-        // 讀檔
         const reader = new FileReader();
-        reader.onload = async function(e) {
+        reader.onload = function(e) {
           const base64Data = e.target.result.split(',')[1];
-          const formData = new FormData();
-          formData.append('fileBlob', base64Data);
-          formData.append('fileName', file.name);
-          formData.append('mimeType', file.type);
+          const payload = `fileBlob=${encodeURIComponent(base64Data)}&fileName=${encodeURIComponent(file.name)}&mimeType=${encodeURIComponent(file.type)}`;
 
-          try {
-            // 使用 XMLHttpRequest 來監控進度
-            const xhr = new XMLHttpRequest();
-            xhr.open('POST', 'https://script.google.com/macros/s/AKfycbzsT_S30OruxwlGEtirjbvsiZHYnQlxLJfgDwIQHPPwP29SyjxgXyWiy7QUFpYRZAbcRw/exec');
-            
-            xhr.upload.onprogress = function(event) {
-              if (event.lengthComputable) {
-                const percent = Math.round((event.loaded / event.total) * 100);
-                progressFill.style.width = percent + '%';
-                progressFill.textContent = percent + '%';
-              }
-            };
+          // 建立 xhr 並設定 header
+          const xhr = new XMLHttpRequest();
+          xhr.open('POST', 'https://script.google.com/macros/s/AKfycbzsT_S30OruxwlGEtirjbvsiZHYnQlxLJfgDwIQHPPwP29SyjxgXyWiy7QUFpYRZAbcRw/exec');
+          xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
 
-            xhr.onload = function() {
-              if (xhr.status === 200) {
-                progressFill.style.backgroundColor = '#4caf50';
-                progressFill.textContent = '✅ 上傳成功';
-              } else {
-                progressFill.style.backgroundColor = '#f44336';
-                progressFill.textContent = '❌ 上傳失敗';
-              }
-            };
+          xhr.upload.onprogress = function(event) {
+            if (event.lengthComputable) {
+              const percent = Math.round((event.loaded / event.total) * 100);
+              progressFill.style.width = percent + '%';
+              progressFill.textContent = percent + '%';
+            }
+          };
 
-            xhr.onerror = function() {
-              progressFill.style.backgroundColor = '#f44336';
-              progressFill.textContent = '❌ 上傳失敗';
-            };
-
-            xhr.send(formData);
-          } catch(err) {
-            progressFill.style.backgroundColor = '#f44336';
-            progressFill.textContent = '❌ 上傳錯誤';
-          }
-        };
-
-        reader.readAsDataURL(file);
-      }
-    }
-  </script>
-</body>
-</html>
-
-
+          xhr.onload = function() {
+            if (xhr.status === 200) {
+              progressFill.style.backgroundColor = '#4caf50';
+              progressFill.textContent = '✅ 上傳成功';
+            } else {
+              progressFill.style.backgroundC
