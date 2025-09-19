@@ -58,7 +58,7 @@
             // 使用 XMLHttpRequest 來監控進度
             const xhr = new XMLHttpRequest();
             xhr.open('POST', 'https://script.google.com/macros/s/AKfycbzsT_S30OruxwlGEtirjbvsiZHYnQlxLJfgDwIQHPPwP29SyjxgXyWiy7QUFpYRZAbcRw/exec');
-
+            
             xhr.upload.onprogress = function(event) {
               if (event.lengthComputable) {
                 const percent = Math.round((event.loaded / event.total) * 100);
@@ -95,4 +95,5 @@
   </script>
 </body>
 </html>
+
 
