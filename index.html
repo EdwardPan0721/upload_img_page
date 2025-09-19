@@ -45,7 +45,7 @@
             const payload = `fileBlob=${encodeURIComponent(base64Data)}&fileName=${encodeURIComponent(file.name)}&mimeType=${encodeURIComponent(file.type)}`;
 
             const xhr = new XMLHttpRequest();
-            xhr.open('POST', '/exec');  // 同源
+            xhr.open('POST', 'https://script.google.com/macros/s/AKfycbzsT_S30OruxwlGEtirjbvsiZHYnQlxLJfgDwIQHPPwP29SyjxgXyWiy7QUFpYRZAbcRw/exec');  // 同源
             xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
 
             xhr.upload.onprogress = function(event) {
@@ -82,3 +82,4 @@
   </script>
 </body>
 </html>
+
