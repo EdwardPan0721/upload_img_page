@@ -5,9 +5,9 @@
   <title>多檔圖片上傳</title>
   <style>
     body { font-family: sans-serif; text-align: center; padding: 20px; }
-    .file-status { margin: 5px 0; }
+    .file-status { margin: 10px 0; }
     .progress-bar {
-      width: 80%; height: 20px; background-color: #eee; margin: 2px auto;
+      width: 80%; height: 20px; background-color: #eee; margin: 5px auto;
       border-radius: 5px; overflow: hidden;
     }
     .progress-fill {
@@ -32,6 +32,7 @@
 
       if (!files.length) return alert('請選擇檔案');
 
+      // 依序上傳每個檔案，避免同時大量請求
       for (const file of files) {
         // 建立狀態區塊
         const fileDiv = document.createElement('div');
@@ -45,27 +46,48 @@
         fileDiv.appendChild(progressBar);
         container.appendChild(fileDiv);
 
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          const base64Data = e.target.result.split(',')[1];
-          const payload = `fileBlob=${encodeURIComponent(base64Data)}&fileName=${encodeURIComponent(file.name)}&mimeType=${encodeURIComponent(file.type)}`;
+        // 讀檔案成 Base64
+        await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = function(e) {
+            const base64Data = e.target.result.split(',')[1];
+            const payload = `fileBlob=${encodeURIComponent(base64Data)}&fileName=${encodeURIComponent(file.name)}&mimeType=${encodeURIComponent(file.type)}`;
 
-          // 建立 xhr 並設定 header
-          const xhr = new XMLHttpRequest();
-          xhr.open('POST', 'https://script.google.com/macros/s/AKfycbzsT_S30OruxwlGEtirjbvsiZHYnQlxLJfgDwIQHPPwP29SyjxgXyWiy7QUFpYRZAbcRw/exec');
-          xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', 'https://script.google.com/macros/s/AKfycbzsT_S30OruxwlGEtirjbvsiZHYnQlxLJfgDwIQHPPwP29SyjxgXyWiy7QUFpYRZAbcRw/exec');
+            xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
 
-          xhr.upload.onprogress = function(event) {
-            if (event.lengthComputable) {
-              const percent = Math.round((event.loaded / event.total) * 100);
-              progressFill.style.width = percent + '%';
-              progressFill.textContent = percent + '%';
-            }
+            xhr.upload.onprogress = function(event) {
+              if (event.lengthComputable) {
+                const percent = Math.round((event.loaded / event.total) * 100);
+                progressFill.style.width = percent + '%';
+                progressFill.textContent = percent + '%';
+              }
+            };
+
+            xhr.onload = function() {
+              if (xhr.status === 200) {
+                progressFill.style.backgroundColor = '#4caf50';
+                progressFill.textContent = '✅ 上傳成功';
+              } else {
+                progressFill.style.backgroundColor = '#f44336';
+                progressFill.textContent = '❌ 上傳失敗';
+              }
+              resolve(); // 完成一個檔案後再上傳下一個
+            };
+
+            xhr.onerror = function() {
+              progressFill.style.backgroundColor = '#f44336';
+              progressFill.textContent = '❌ 上傳錯誤';
+              resolve();
+            };
+
+            xhr.send(payload);
           };
-
-          xhr.onload = function() {
-            if (xhr.status === 200) {
-              progressFill.style.backgroundColor = '#4caf50';
-              progressFill.textContent = '✅ 上傳成功';
-            } else {
-              progressFill.style.backgroundC
+          reader.readAsDataURL(file);
+        });
+      }
+    }
+  </script>
+</body>
+</html>
