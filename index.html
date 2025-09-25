@@ -1,84 +1,47 @@
 <!DOCTYPE html>
 <html>
-<head>
-  <meta charset="UTF-8">
-  <title>多檔圖片上傳</title>
-  <style>
-    body { font-family: sans-serif; text-align: center; padding: 20px; }
-    .file-status { margin: 10px 0; }
-    .progress-bar { width: 80%; height: 20px; background-color: #eee; margin: 5px auto; border-radius: 5px; overflow: hidden; }
-    .progress-fill { height: 100%; width: 0%; background-color: #4caf50; text-align: center; color: white; line-height: 20px; font-size: 12px; }
-  </style>
-</head>
-<body>
-  <h2>📸 多檔圖片上傳</h2>
-  <input type="file" id="fileInput" accept="image/*" multiple>
-  <button onclick="uploadFiles()">上傳</button>
-  
-  <div id="statusContainer"></div>
+  <body>
+    <h3>多檔上傳 (jpg / png)</h3>
 
-  <script>
-    async function uploadFiles() {
-      const fileInput = document.getElementById('fileInput');
-      const files = Array.from(fileInput.files);
-      const container = document.getElementById('statusContainer');
-      container.innerHTML = '';
+    <label>使用者 ID:</label>
+    <input type="text" id="userId" placeholder="請輸入ID" /><br><br>
 
-      if (!files.length) return alert('請選擇檔案');
+    <input type="file" id="files" multiple accept="image/png, image/jpeg" />
+    <button onclick="uploadFiles()">上傳</button>
+    <div id="result"></div>
 
-      for (const file of files) {
-        const fileDiv = document.createElement('div');
-        fileDiv.className = 'file-status';
-        fileDiv.innerHTML = `<strong>${file.name}</strong>`;
-        const progressBar = document.createElement('div');
-        progressBar.className = 'progress-bar';
-        const progressFill = document.createElement('div');
-        progressFill.className = 'progress-fill';
-        progressBar.appendChild(progressFill);
-        fileDiv.appendChild(progressBar);
-        container.appendChild(fileDiv);
+    <script>
+      function uploadFiles() {
+        const userId = document.getElementById("userId").value.trim();
+        if (!userId) {
+          alert("請輸入使用者ID");
+          return;
+        }
 
-        await new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.onload = function(e) {
-            const base64Data = e.target.result.split(',')[1];
-            const payload = `fileBlob=${encodeURIComponent(base64Data)}&fileName=${encodeURIComponent(file.name)}&mimeType=${encodeURIComponent(file.type)}`;
+        const files = document.getElementById("files").files;
+        if (files.length === 0) {
+          alert("請選擇至少一個檔案");
+          return;
+        }
 
-            const xhr = new XMLHttpRequest();
-            xhr.open('POST', 'https://script.google.com/macros/s/AKfycbzsT_S30OruxwlGEtirjbvsiZHYnQlxLJfgDwIQHPPwP29SyjxgXyWiy7QUFpYRZAbcRw/exec');
-            xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+        let formData = new FormData();
+        formData.append("userId", userId); // 把ID傳到後端
+        for (let i = 0; i < files.length; i++) {
+          formData.append("files", files[i]);
+        }
 
-            xhr.upload.onprogress = function(event) {
-              if (event.lengthComputable) {
-                const percent = Math.round((event.loaded / event.total) * 100);
-                progressFill.style.width = percent + '%';
-                progressFill.textContent = percent + '%';
-              }
-            };
-
-            xhr.onload = function() {
-              if (xhr.status === 200) {
-                progressFill.style.backgroundColor = '#4caf50';
-                progressFill.textContent = '✅ 上傳成功';
-              } else {
-                progressFill.style.backgroundColor = '#f44336';
-                progressFill.textContent = '❌ 上傳失敗';
-              }
-              resolve();
-            };
-
-            xhr.onerror = function() {
-              progressFill.style.backgroundColor = '#f44336';
-              progressFill.textContent = '❌ 上傳錯誤';
-              resolve();
-            };
-
-            xhr.send(payload);
-          };
-          reader.readAsDataURL(file);
-        });
+        fetch("https://script.google.com/macros/s/【你的GAS部署網址】/exec", {
+          method: "POST",
+          body: formData,
+        })
+          .then((res) => res.text())
+          .then((text) => {
+            document.getElementById("result").innerText = text;
+          })
+          .catch((err) => {
+            document.getElementById("result").innerText = "上傳失敗: " + err;
+          });
       }
-    }
-  </script>
-</body>
+    </script>
+  </body>
 </html>
